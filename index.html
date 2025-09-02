@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modal Form with Validation & Shortcuts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', Arial, sans-serif;
+      background: linear-gradient(135deg, #000000 0%, #02214f 100%);
+      margin: 0;
+      padding: 40px;
+      color: #333;
+      position: relative;
+      min-height: 300vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 260px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      color: rgb(6, 160, 191);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      margin-top: 0;
+      font-weight: 600;
+    }
+    .shortcuts {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 20px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-content {
+      background: #fff;
+      width: 90%;
+      max-width: 450px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.4s ease-out;
+    }
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .modal-content.shake {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    .modal-header {
+      background: #010925;
+      color: rgb(14, 203, 232);
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .close {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 28px;
+      color: white;
+      cursor: pointer;
+      line-height: 1;
+      user-select: none;
+    }
+    .close:hover {
+      color: #f0f0f0;
+    }
+    .form-body {
+      padding: 25px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus {
+      border-color: #00bcfb;
+      box-shadow: 0 0 0 3px rgba(235, 239, 239, 0.924);
+      outline: none;
+    }
+    .active-field {
+      border-color: #e9e5e0;
+      box-shadow: 0 0 0 3px rgba(108, 80, 3, 0.2);
+    }
+    .error {
+      border-color: #eb2121 !important;
+      box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1) !important;
+    }
+    .error-message {
+      color: #f44336;
+      font-size: 13px;
+      margin-top: 5px;
+      min-height: 18px;
+      text-align: left;
+    }
+    .btn {
+      background: #051f5b;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #030c62;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-specify {
+      background: #097e9f;
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 10px 24px;
+      opacity: 0.8;
+      width: 100%;
+    }
+    .btn-specify:hover {
+      background: #0a6096;
+      opacity: 1;
+    }
+    .btn-specify:disabled {
+      background: #ccc;
+      color: #555;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .instruction {
+      font-size: 14px;
+      color: #05bcee;
+      margin-bottom: 15px;
+      font-style: italic;
+    }
+
+    .confirm-modal .modal-header {
+      background: #280397;
+    }
+    .confirm-content {
+      text-align: center;
+      padding: 30px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .confirm-content p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .confirm-btn {
+      background: #132ad4;
+      margin-top: 20px;
+    }
+    .confirm-btn:hover {
+      background: #051980;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>User Registration</h1>
+    <p class="shortcuts">
+      <strong>Press:</strong>
+      " Ctrl+Alt+N to open Form, Alt+1 to clear current field, Esc to reset "
+    </p>
+  </div>
+
+  <div id="myModal" class="modal">
+    <div class="modal-content" id="modalContent">
+      <div class="modal-header">
+        <h2>User Information</h2>
+        <span class="close">&times;</span>
+      </div>
+      <div class="form-body">
+        <p class="instruction">Make sure that all information is true.</p>
+        <form id="userForm">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter your full name">
+            <div class="error-message" id="nameError"></div>
+          </div>
+          <div class="form-group">
+            <label for="age">Age</label>
+            <select id="age" name="age">
+              <option value="">Select your age</option>
+            </select>
+            <div class="error-message" id="ageError"></div>
+          </div>
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender">
+              <option value="">Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+            <div class="error-message" id="genderError"></div>
+          </div>
+
+          <div class="form-group" id="customGenderGroup" style="display: none; margin-top: 10px;">
+            <label for="customGender">Please Specify</label>
+            <input type="text" id="customGender" name="customGender" placeholder="Enter your gender">
+            <div class="error-message" id="customGenderError"></div>
+          </div>
+
+          <button type="submit" class="btn">Submit</button>
+          <button type="button" id="specifyBtn" class="btn btn-specify" disabled>Please Specify</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Data Saved</h2>
+        <span class="close">&times;</span>
+      </div>
+      <div class="confirm-content" id="confirmContent">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Populate age options
+    const ageSelect = document.getElementById("age");
+    for (let i = 1; i <= 120; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = i;
+      ageSelect.appendChild(option);
+    }
+
+    const modal = document.getElementById("myModal");
+    const modalContent = document.getElementById("modalContent");
+    const confirmModal = document.getElementById("confirmModal");
+    const confirmContent = document.getElementById("confirmContent");
+
+    const nameInput = document.getElementById("name");
+    const ageSelectEl = document.getElementById("age");
+    const genderSelectEl = document.getElementById("gender");
+    const customGenderGroup = document.getElementById("customGenderGroup");
+    const customGenderInput = document.getElementById("customGender");
+    const specifyBtn = document.getElementById("specifyBtn");
+    const closeBtns = document.querySelectorAll(".close");
+    const fields = [nameInput, ageSelectEl, genderSelectEl];
+    let currentFocus = null;
+
+    // Save user data to localStorage
+    function saveToLocalStorage(name, age, gender) {
+      const userData = {
+        name: name,
+        age: age,
+        gender: gender === "other" ? customGenderInput.value.trim() : gender
+      };
+      localStorage.setItem("userData", JSON.stringify(userData));
+    }
+
+    // Load user data from localStorage (optional)
+    function loadFromLocalStorage() {
+      const data = localStorage.getItem("userData");
+      if (data) {
+        return JSON.parse(data);
+      }
+      return null;
+    }
+
+    // Open modal
+    function openModal() {
+      modal.style.display = "flex";
+      nameInput.focus();
+      currentFocus = nameInput;
+      updateGenderUI();
+      checkFormValidity();
+    }
+
+    // Close modal
+    function closeModal() {
+      modal.style.display = "none";
+    }
+
+    // Close confirm modal
+    function closeConfirmModal() {
+      confirmModal.style.display = "none";
+    }
+
+    // Clear all fields
+    function clearAllFields() {
+      fields.forEach(f => f.value = "");
+      customGenderInput.value = "";
+      customGenderGroup.style.display = "none";
+      clearErrors();
+      checkFormValidity();
+    }
+
+    // Clear current focused field
+    function clearCurrentField() {
+      if (currentFocus) {
+        currentFocus.value = "";
+        if (currentFocus === genderSelectEl) {
+          updateGenderUI();
+        }
+        showError(currentFocus, "This field is required");
+        checkFormValidity();
+      }
+    }
+
+    // Show error
+    function showError(field, message) {
+      field.classList.add("error");
+      document.getElementById(field.id + "Error").textContent = message;
+    }
+
+    // Clear error
+    function clearError(field) {
+      field.classList.remove("error");
+      document.getElementById(field.id + "Error").textContent = "";
+    }
+
+    // Clear all errors
+    function clearErrors() {
+      [nameInput, ageSelectEl, genderSelectEl, customGenderInput].forEach(f => {
+        if (f) clearError(f);
+      });
+    }
+
+    // Validate form
+    function validateForm() {
+      let valid = true;
+      clearErrors();
+
+      if (!nameInput.value.trim()) {
+        showError(nameInput, "Name is required");
+        valid = false;
+      }
+      if (!ageSelectEl.value) {
+        showError(ageSelectEl, "Age is required");
+        valid = false;
+      }
+      if (!genderSelectEl.value) {
+        showError(genderSelectEl, "Gender is required");
+        valid = false;
+      } else if (genderSelectEl.value === "other" && !customGenderInput.value.trim()) {
+        showError(customGenderInput, "Please specify your gender");
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    // Shake modal animation
+    function shakeModal() {
+      modalContent.classList.add("shake");
+      setTimeout(() => {
+        modalContent.classList.remove("shake");
+      }, 500);
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Show saved data in confirmation modal and save to localStorage
+    function showSavedModal(name, age, gender) {
+      const displayGender = gender === "other"
+        ? customGenderInput.value.trim()
+        : gender.charAt(0).toUpperCase() + gender.slice(1);
+
+      confirmContent.innerHTML = `
+        <p><strong>Full Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Age:</strong> ${age}</p>
+        <p><strong>Gender:</strong> ${escapeHtml(displayGender)}</p>
+        <button class="btn confirm-btn" onclick="closeConfirmModal()">OK</button>
+      `;
+      confirmModal.style.display = "flex";
+
+      // Save data to localStorage
+      saveToLocalStorage(name, age, gender);
+    }
+
+    // Check if form is valid to enable/disable "Please Specify" button
+    function checkFormValidity() {
+      const hasName = nameInput.value.trim();
+      const hasAge = ageSelectEl.value;
+      const hasGender = genderSelectEl.value;
+
+      specifyBtn.disabled = !(hasName && hasAge && hasGender);
+    }
+
+    // Focus first invalid field
+    function focusFirstInvalid() {
+      if (!nameInput.value.trim()) {
+        nameInput.focus();
+        showError(nameInput, "Please specify your name");
+        return;
+      }
+      if (!ageSelectEl.value) {
+        ageSelectEl.focus();
+        showError(ageSelectEl, "Please specify your age");
+        return;
+      }
+      if (!genderSelectEl.value) {
+        genderSelectEl.focus();
+        showError(genderSelectEl, "Please specify your gender");
+        return;
+      }
+      if (genderSelectEl.value === "other" && !customGenderInput.value.trim()) {
+        customGenderInput.focus();
+        showError(customGenderInput, "Please specify your gender");
+        return;
+      }
+    }
+
+    // Update UI based on gender selection
+    function updateGenderUI() {
+      if (genderSelectEl.value === "other") {
+        customGenderGroup.style.display = "block";
+        customGenderInput.focus();
+      } else {
+        customGenderGroup.style.display = "none";
+        clearError(customGenderInput);
+      }
+      checkFormValidity();
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", function(event) {
+      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        openModal();
+      } else if (event.ctrlKey && event.altKey && event.key === "1") {
+        event.preventDefault();
+        clearAllFields();
+        closeModal();
+      } else if (event.altKey && event.key === "1") {
+        event.preventDefault();
+        clearCurrentField();
+      } else if (event.key === "Enter" && modal.style.display === "flex") {
+        event.preventDefault();
+        if (currentFocus === customGenderInput) {
+          document.getElementById("userForm").requestSubmit();
+          return;
+        }
+        const idx = fields.indexOf(currentFocus);
+        if (idx > -1 && idx < fields.length - 1) {
+          fields[idx + 1].focus();
+        } else if (idx === fields.length - 1) {
+          if (genderSelectEl.value === "other" && customGenderGroup.style.display === "block") {
+            customGenderInput.focus();
+          } else {
+            document.getElementById("userForm").requestSubmit();
+          }
+        }
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        if (modal.style.display === "flex") {
+          clearAllFields();
+          nameInput.focus();
+        } else if (confirmModal.style.display === "flex") {
+          closeConfirmModal();
+        }
+      }
+    });
+
+    // Focus/blur/input handlers
+    fields.forEach(field => {
+      field.addEventListener("focus", () => {
+        currentFocus = field;
+        field.classList.add("active-field");
+      });
+      field.addEventListener("blur", () => {
+        field.classList.remove("active-field");
+      });
+      field.addEventListener("input", () => {
+        if (field.value) clearError(field);
+        checkFormValidity();
+      });
+    });
+
+    customGenderInput.addEventListener("focus", () => {
+      currentFocus = customGenderInput;
+      customGenderInput.classList.add("active-field");
+    });
+    customGenderInput.addEventListener("blur", () => {
+      customGenderInput.classList.remove("active-field");
+    });
+    customGenderInput.addEventListener("input", () => {
+      if (customGenderInput.value) clearError(customGenderInput);
+      checkFormValidity();
+    });
+
+    genderSelectEl.addEventListener("change", updateGenderUI);
+
+    // Form submission
+    document.getElementById("userForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      if (!validateForm()) {
+        shakeModal();
+        focusFirstInvalid();
+        return;
+      }
+
+      const name = nameInput.value.trim();
+      const age = ageSelectEl.value;
+      const gender = genderSelectEl.value;
+
+      showSavedModal(name, age, gender);
+
+      clearAllFields();
+      closeModal();
+    });
+
+    // "Please Specify" button
+    specifyBtn.addEventListener("click", function() {
+      if (genderSelectEl.value === "other" && !customGenderInput.value.trim()) {
+        customGenderInput.focus();
+        showError(customGenderInput, "Please specify your gender");
+      } else {
+        shakeModal();
+        focusFirstInvalid();
+      }
+    });
+
+    // Re-check validity on input
+    [nameInput, ageSelectEl, genderSelectEl, customGenderInput].forEach(f => {
+      if (f) {
+        f.addEventListener("input", checkFormValidity);
+      }
+    });
+
+    // Close modals on X or click outside
+    closeBtns.forEach(btn => {
+      btn.addEventListener("click", function() {
+        if (this.parentElement.parentElement.parentElement === modal) {
+          closeModal();
+        } else if (this.parentElement.parentElement.parentElement === confirmModal) {
+          closeConfirmModal();
+        }
+      });
+    });
+
+    window.onclick = function(e) {
+      if (e.target === modal) closeModal();
+      if (e.target === confirmModal) closeConfirmModal();
+    };
+
+    // Initial check
+    checkFormValidity();
+  </script>
+
+</body>
+</html>
